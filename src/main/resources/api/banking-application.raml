@@ -1,0 +1,232 @@
+#%RAML 1.0
+title: banking-application
+description: This is a banking application
+
+/createAccount:
+  post:
+    queryParameters:
+      customerName:
+        required: true
+        type: string
+        minLength: 5
+        maxLength: 20 
+      customerGender:
+        required: true
+        type: string  
+      customerAddress:
+        required: true
+        type: string
+        minLength: 5
+        maxLength: 20
+      customerPincode:
+        required: true
+        minLength: 6
+        maxLength: 6
+        type: string
+      depositAmount:
+        required: true
+        type: string
+        default: "Minimum Rs.100"
+        minLength: 3 
+      customerPhonenumber:
+        required: true
+        type: string
+        minLength: 10
+        maxLength: 10
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Account Created Successfully With The Account Number *********"
+              }  
+      400:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Bad Request"
+              }
+      404:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : " Page Not Found"
+              }
+      500:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Internal Server Error"}  
+
+/depositAmount:
+  post:
+    queryParameters:
+      accountNumber:
+        required: true
+      depositAmount:
+        minLength: 3
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Your Deposit Amount Is ******* And Your Total Balance Is *******"
+              }
+      400:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Bad Request"
+            }
+      404:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : " Page Not Found"
+            }
+      500:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Internal Server Error"}
+
+/withdrawalAmount:
+  get:
+    queryParameters:
+      accountNumber:
+        required: true
+      withdrawalAmount:
+        required: true
+        minLength: 3
+        type: string
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+             {
+              "Message" : "Your Withdrawal Ammount Is ******* And YourTotal Balance Is ******** "
+             }
+      400:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Bad Request"
+            }
+      404:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : " Page Not Found"
+            }
+      500:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Internal Server Error"}
+
+/checkBalance/{accountNumber}:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example:   
+             {
+               "Message" : "Your Account Balance is *******"
+             }
+      400:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Bad Request"
+            }
+      404:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : " Page Not Found"
+            }
+      500:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Internal Server Error"}
+
+/forgotAccountNumber/{customerPhonenumber}:  
+ get:
+   responses:
+      200:
+        body:
+          application/json:
+            example:   
+             {
+               "Message" : "Your Account Number is *******"
+             }
+      400:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Bad Request"
+            }
+      404:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : " Page Not Found"
+            }
+      500:
+       body:
+        application/json:
+          example:
+            {
+              "Message" : "Internal Server Error"}
+
+/deleteAccount/{accountNumber}:
+  delete:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Your Account Has Been Deleted"
+              }
+      400:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Bad Request"
+              }
+      404:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : " Page Not Found"
+              }
+      500:
+        body:
+          application/json:
+            example:
+              {
+                "Message" : "Internal Server Error"}

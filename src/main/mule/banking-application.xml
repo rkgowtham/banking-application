@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="banking-application-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="banking-application-config" api="banking-application.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="baa79fdf-5bf3-4558-87a5-d3047ba0523a" >
+		<db:my-sql-connection host="sql5.freesqldatabase.com" port="3306" user="sql5427663" password="HBDBsGRB8D" database="sql5427663" />
+	</db:config>
+	<api-gateway:autodiscovery apiId="17098822" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="deaafb11-c8c9-47a0-a312-6f16b24e3b25" flowRef="banking-application-main" />
+	<flow name="banking-application-main">
+        <http:listener config-ref="banking-application-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="banking-application-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="banking-application-console">
+        <http:listener config-ref="banking-application-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="banking-application-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="delete:\deleteAccount\(accountNumber):banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="11083a84-3ce3-406e-a8ab-b89e4ae54a38" message="Data Recieved From Customer"/>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:name="getAccountNumber">
+            <ee:variables>
+                <ee:set-variable variableName="accountNumber">attributes.uriParams.'accountNumber'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <db:delete doc:name="Delete" doc:id="535bb0a9-7511-4227-bdf6-45531d2f9110" config-ref="Database_Config">
+			<db:sql ><![CDATA[delete from customerDetails where accountNumber=:accNumber]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	accNumber : vars.accountNumber
+}]]]></db:input-parameters>
+		</db:delete>
+		<choice doc:name="Choice" doc:id="8b891a3b-52f5-4607-b0a5-24f20d4b4e74" >
+			<when expression="#[payload != 0]">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "Message": "Your account has been deleted"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Failure Responce" doc:id="2400e373-e43e-4ecc-8df2-ab854ac50dfa" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "Message" : "Account number is not available enter the correct account number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="0e39e0d3-e7f3-4e92-ad7f-6652709c3be7" message="Data Reached To Customer"/>
+    </flow>
+    <flow name="get:\checkBalance\(accountNumber):banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="0791ca04-f9a4-46b6-b6da-dd7130fe1d7d" message="Data Recieved From Customer"/>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:name="getAccountNumber">
+            <ee:variables>
+                <ee:set-variable variableName="accountNumber">attributes.uriParams.'accountNumber'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <db:select doc:name="Select" doc:id="5c716c62-dd5e-4731-86d2-ec0d0f7cad7c" config-ref="Database_Config">
+			<db:sql ><![CDATA[select totalBalance from customerDetails where accountNumber=:AN]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"AN" : vars.accountNumber
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="d08737ed-ad1e-44f7-add0-e63d2ee6ba80" >
+			<when expression="#[payload.totalBalance !=null]">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "Total amount in your account is" : payload
+}
+]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Failure Responce" doc:id="2f8507d0-e378-464a-9b45-b702f3102b55" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message" : "Enter the correct account number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="38be4df7-11fc-4960-9943-fa5e31f9a352" message="Data Reached To Customer"/>
+    </flow>
+	<flow name="get:\forgotAccountNumber\(customerPhonenumber):banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="250e1f08-a0ee-4b53-9c11-3fac609b63a9" message="Data Recieved From Customer"/>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:name="getPhoneNumber">
+            <ee:variables>
+                <ee:set-variable variableName="customerPhonenumber">attributes.uriParams.'customerPhonenumber'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <db:select doc:name="Select" doc:id="0b8bca2e-69f7-4526-9cce-4ad5a060a6e3" config-ref="Database_Config">
+			<db:sql ><![CDATA[select accountNumber from customerDetails where customerPhonenumber=:cPh]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	cPh : vars.customerPhonenumber
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="b5e9b6ab-08bd-45f1-8acb-69ae1c247ac5" >
+			<when expression="#[payload.accountNumber !=null]">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+ "Your account number is" : payload.accountNumber
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Failure Responce" doc:id="ec31740b-4cd5-436d-8ead-9ad903071a8e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message" : "Data not exist, create account first or enter the correct mobile number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="616ce933-5c98-4aaf-bd84-3de79771213b" message="Data Reached To Customer"/>
+    </flow>
+    <flow name="get:\withdrawalAmount:banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="23ef7491-a7e0-4dec-b561-b017ea5e60ef" message="Data Recieved From Customer"/>
+		<set-variable value="#[attributes.queryParams.accountNumber]" doc:name="getAccountNumber" doc:id="4dc59f76-6b4e-412d-8d60-ecced77197e9" variableName="accNum"/>
+		<db:update doc:name="Update" doc:id="b83def51-ab2c-499e-9984-ae748b260a29" config-ref="Database_Config">
+			<db:sql ><![CDATA[update customerDetails set totalBalance= totalBalance - :TB where accountNumber=:AC]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	TB : attributes.queryParams.withdrawalAmount,
+	AC : attributes.queryParams.accountNumber
+}]]]></db:input-parameters>
+		</db:update>
+		<choice doc:name="Choice" doc:id="3b01deec-d4fe-4262-9dce-9960d2509075" >
+			<when expression="#[payload.affectedRows == 1]">
+				<db:select doc:name="Select" doc:id="026a23ba-1115-4ee8-b7d1-91c6c09d991c" config-ref="Database_Config">
+					<db:sql ><![CDATA[select totalBalance from customerDetails where accountNumber=:AC]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+  AC : vars.accNum
+}]]]></db:input-parameters>
+				</db:select>
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "Message": "Amount debited from your account successfully",
+  "Total amount in your account is" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Failure Responce" doc:id="4e916eba-9ab3-47b5-b822-798bc750845d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message" : "Amount is not debited from your account due technical error or enter correct account number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="04e92007-c1ea-4948-a1c3-ce886c2d9b48" message="Data Reached To Customer"/>
+    </flow>
+    <flow name="post:\createAccount:banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="8ce1c0e8-1be6-4b34-94b5-b64485ca1279" message="Data Recieved From Customer"/>
+		<set-variable doc:name="getPhoneNumber" doc:id="6875a845-f3b7-4f00-8512-ac80db9d9902" variableName="phoneNumber" value="#[attributes.queryParams.customerPhonenumber]"/>
+		<db:insert doc:name="Insert" doc:id="77afa47a-e329-4684-b818-dc004dac1b1a" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert IGNORE into customerDetails(customerName,customerGender,customerAddress,customerPincode,totalBalance,customerPhonenumber) values(:customerName,:customerGender,:customerAddress,:customerPincode,:totalBalance,:customerPhonenumber)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"customerName" : attributes.queryParams.customerName,
+	"customerGender" : attributes.queryParams.customerGender,
+	"customerAddress" : attributes.queryParams.customerAddress,
+	"customerPincode" : attributes.queryParams.customerPincode,
+	"totalBalance"	: attributes.queryParams.depositAmount,
+	"customerPhonenumber" :attributes.queryParams.customerPhonenumber
+}]]]></db:input-parameters>
+		</db:insert>
+		<choice doc:name="Choice" doc:id="b5ede977-9786-43cc-ba4c-04dcaa1bd231" >
+			<when expression="#[payload.affectedRows == 1]">
+				<db:select doc:name="Select" doc:id="1c2266d7-1f26-417a-9e74-6daf6817de67" config-ref="Database_Config">
+					<db:sql ><![CDATA[select accountNumber from customerDetails where customerPhonenumber=:CP]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"CP" : vars.phoneNumber
+}]]]></db:input-parameters>
+				</db:select>
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "Message" : "Your account has been created successfully ",
+  "Your account number is" : payload.accountNumber
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<db:select doc:name="Select" doc:id="1a940496-ae6f-4ca5-9353-ffc87bb47b99" config-ref="Database_Config">
+					<db:sql ><![CDATA[select accountNumber from customerDetails where customerPhonenumber=:CP]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"CP" : vars.phoneNumber
+}]]]></db:input-parameters>
+				</db:select>
+				<ee:transform doc:name="Failure Responce" doc:id="cbc87cf3-0461-4320-979f-028adc4f94e1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"You have a account already , your account number is " : payload.accountNumber
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="09ff058a-d293-464b-800c-662a4ef2caeb" message="Data Reached To Customer"/>
+    </flow>
+    <flow name="post:\depositAmount:banking-application-config">
+        <logger level="INFO" doc:name="Start Logger" doc:id="b4d6477b-aadd-4347-8568-1ed5af93fd5b" message="Data Recieved From Customer"/>
+		<set-variable value="#[attributes.queryParams.accountNumber]" doc:name="getAccountNumber" doc:id="ba58fd37-d1df-4a42-961c-2361c41b43f4" variableName="accNum"/>
+		<db:update doc:name="Update" doc:id="a3efd352-3e54-41f5-9913-c1926228011f" config-ref="Database_Config">
+			<db:sql ><![CDATA[update customerDetails set totalBalance=(totalBalance + :TB) where accountNumber=:AC]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	TB : attributes.queryParams.depositAmount,
+	AC : attributes.queryParams.accountNumber
+}]]]></db:input-parameters>
+		</db:update>
+		<choice doc:name="Choice" doc:id="d40e8732-3346-47fa-babc-3d186a9e5118" >
+			<when expression="#[payload.affectedRows == 1]">
+				<db:select doc:name="Select" doc:id="bf875ebd-181f-467d-8772-83ee744776df" config-ref="Database_Config">
+					<db:sql ><![CDATA[select totalBalance from customerDetails where accountNumber=:AC
+]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+  AC : vars.accNum
+}]]]></db:input-parameters>
+				</db:select>
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Sucess Responce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+   "Message": "Amount deposit to your account successfully",
+   "Total amount in your account is" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Failure Responce" doc:id="d6731ca6-7e9b-4691-85da-92ef36179ffb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+"Message" : "Amount is not deposit to your account due to technical error or enter the correct account number"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Logger" doc:id="cf552a31-078c-48bd-9034-302d4a56fe91" message="Data Reached To Customer"/>
+    </flow>
+</mule>
